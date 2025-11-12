@@ -1,0 +1,852 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/schemas/v3.0/schema.json
+openapi: 3.0.3
+info:
+  title: Expense Management API
+  description: |
+    REST API for managing expenses, users, categories, and payment methods with PostgreSQL integration.
+
+    ## Features
+    - User management with email search
+    - Expense tracking with filtering
+    - Category management
+    - Payment method management
+    - PostgreSQL database integration
+
+    ## Authentication
+    Currently, this API does not require authentication. For production use, implement JWT or OAuth2.
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@expense-api.example.com
+  license:
+    name: ISC
+    url: https://opensource.org/licenses/ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: http://localhost:3001
+    description: Local server
+  - url: https://api.expense-mgmt.example.com
+    description: Production server
+
+tags:
+  - name: Users
+    description: User management operations
+  - name: Expenses
+    description: Expense tracking and management
+  - name: Categories
+    description: Expense category management
+  - name: Payment Methods
+    description: Payment method management
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /:
+    get:
+      summary: API Information
+      description: Returns basic API information and available endpoints
+      tags:
+        - Health
+      responses:
+        "200":
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Welcome to the Expense Management API
+                  version:
+                    type: string
+                    example: 1.0.0
+                  routes:
+                    type: object
+                    properties:
+                      users:
+                        type: string
+                        example: /api/users
+                      expenses:
+                        type: string
+                        example: /api/expenses
+
+  /health:
+    get:
+      summary: Health Check
+      description: Check if the API and database are healthy
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  database:
+                    type: string
+                    example: Connected
+                  message:
+                    type: string
+                    example: Server is healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+        "500":
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/users:
+    get:
+      summary: Get all users
+      description: Retrieve all users with optional filtering
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: query
+          description: Filter by user ID
+          schema:
+            type: integer
+        - name: fullName
+          in: query
+          description: Filter by full name (partial match)
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: Filter by email (partial match)
+          schema:
+            type: string
+        - name: phoneNumber
+          in: query
+          description: Filter by phone number (partial match)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 10
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      summary: Create a new user
+      description: Create a new user in the system
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        example: 1
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/users/{id}:
+    get:
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      summary: Update user
+      description: Update an existing user's information
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Delete user
+      description: Delete a user from the system
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/users/email/{email}:
+    get:
+      summary: Get user by email
+      description: Retrieve a specific user by their email address
+      tags:
+        - Users
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: User email address
+          schema:
+            type: string
+            format: email
+            example: john.doe@example.com
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/expenses:
+    get:
+      summary: Get all expenses
+      description: Retrieve all expenses with optional filtering and user information
+      tags:
+        - Expenses
+      parameters:
+        - name: userId
+          in: query
+          description: Filter by user ID
+          schema:
+            type: integer
+        - name: categoryId
+          in: query
+          description: Filter by category ID
+          schema:
+            type: integer
+        - name: paymentMethodId
+          in: query
+          description: Filter by payment method ID
+          schema:
+            type: integer
+        - name: expenseDate
+          in: query
+          description: Filter by expense date
+          schema:
+            type: string
+            format: date
+        - name: createdAt
+          in: query
+          description: Filter by creation date
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 25
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ExpenseWithUser"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      summary: Create a new expense
+      description: Create a new expense record
+      tags:
+        - Expenses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseCreate"
+      responses:
+        "201":
+          description: Expense created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Expense created successfully
+                  data:
+                    $ref: "#/components/schemas/Expense"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/expenses/{id}:
+    get:
+      summary: Get expense by ID
+      description: Retrieve a specific expense with user information
+      tags:
+        - Expenses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Expense ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expense found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/ExpenseWithUser"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      summary: Update expense
+      description: Update an existing expense
+      tags:
+        - Expenses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Expense ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseUpdate"
+      responses:
+        "200":
+          description: Expense updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Expense updated successfully
+                  data:
+                    $ref: "#/components/schemas/Expense"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Delete expense
+      description: Delete an expense from the system
+      tags:
+        - Expenses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Expense ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expense deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Expense deleted successfully
+                  data:
+                    $ref: "#/components/schemas/Expense"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/expenses/by-email/{email}:
+    get:
+      summary: Get expenses by user email
+      description: Retrieve all expenses for a specific user identified by email address
+      tags:
+        - Expenses
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: User email address
+          schema:
+            type: string
+            format: email
+            example: john.doe@example.com
+      responses:
+        "200":
+          description: Expenses found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 15
+                  user_email:
+                    type: string
+                    example: john.doe@example.com
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ExpenseWithUser"
+        "404":
+          description: No expenses found for this email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          description: Unique user identifier
+          example: 1
+        full_name:
+          type: string
+          description: User's full name
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john.doe@example.com
+        phone_number:
+          type: string
+          description: User's phone number
+          example: +1-555-123-4567
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+          example: 2024-01-15T10:30:00Z
+
+    UserCreate:
+      type: object
+      required:
+        - fullName
+        - email
+        - phoneNumber
+      properties:
+        fullName:
+          type: string
+          description: User's full name
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          description: User's phone number
+          example: +1-555-123-4567
+
+    UserUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+          description: Updated full name
+          example: John Smith
+        email:
+          type: string
+          format: email
+          description: Updated email address
+          example: john.smith@example.com
+        phoneNumber:
+          type: string
+          description: Updated phone number
+          example: +1-555-987-6543
+
+    Expense:
+      type: object
+      properties:
+        expense_id:
+          type: integer
+          description: Unique expense identifier
+          example: 1
+        user_id:
+          type: integer
+          description: ID of the user who created the expense
+          example: 1
+        category_id:
+          type: integer
+          nullable: true
+          description: Expense category ID
+          example: 3
+        payment_method_id:
+          type: integer
+          nullable: true
+          description: Payment method ID
+          example: 2
+        amount:
+          type: number
+          format: decimal
+          description: Expense amount
+          example: 52.50
+        expense_date:
+          type: string
+          format: date
+          description: Date when expense occurred
+          example: 2024-01-15
+        description:
+          type: string
+          nullable: true
+          description: Expense description
+          example: Grocery shopping
+        created_at:
+          type: string
+          format: date-time
+          description: Expense creation timestamp
+          example: 2024-01-15T10:30:00Z
+
+    ExpenseWithUser:
+      allOf:
+        - $ref: "#/components/schemas/Expense"
+        - type: object
+          properties:
+            user_name:
+              type: string
+              description: Full name of the user
+              example: John Doe
+            user_email:
+              type: string
+              format: email
+              description: Email of the user
+              example: john.doe@example.com
+            user_phone:
+              type: string
+              description: Phone number of the user
+              example: +1-555-123-4567
+
+    ExpenseCreate:
+      type: object
+      required:
+        - userId
+        - amount
+        - expenseDate
+      properties:
+        userId:
+          type: integer
+          description: ID of the user creating the expense
+          example: 1
+        categoryId:
+          type: integer
+          nullable: true
+          description: Expense category ID
+          example: 3
+        paymentMethodId:
+          type: integer
+          nullable: true
+          description: Payment method ID
+          example: 2
+        amount:
+          type: number
+          format: decimal
+          description: Expense amount
+          minimum: 0.01
+          example: 52.50
+        expenseDate:
+          type: string
+          format: date
+          description: Date when expense occurred
+          example: 2024-01-15
+        description:
+          type: string
+          nullable: true
+          description: Expense description
+          example: Grocery shopping
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          nullable: true
+          description: Updated category ID
+          example: 4
+        paymentMethodId:
+          type: integer
+          nullable: true
+          description: Updated payment method ID
+          example: 3
+        amount:
+          type: number
+          format: decimal
+          description: Updated amount
+          minimum: 0.01
+          example: 60.00
+        expenseDate:
+          type: string
+          format: date
+          description: Updated expense date
+          example: 2024-01-16
+        description:
+          type: string
+          nullable: true
+          description: Updated description
+          example: Updated grocery shopping
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Internal Server Error
+        message:
+          type: string
+          example: An error occurred while processing your request
