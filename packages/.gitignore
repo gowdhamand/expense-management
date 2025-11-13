@@ -5,5 +5,4 @@ dist/
 .DS_Store
 *.swp
 .vscode/
-*.ts
 *.tsbuildinfo
