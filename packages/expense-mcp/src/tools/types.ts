@@ -1,4 +1,3 @@
-import { create } from "domain";
 import { z } from "zod";
 
 //Expense Schema
@@ -22,6 +21,7 @@ export const CreateExpenseSchema = z.object({
   paymentMethod: z.string().min(1).max(255),
   amount: z.number().min(0),
   description: z.string().min(1).max(255),
+  expenseDate: z.string().min(1),
 });
 
 export type CreateExpenseInput = z.infer<typeof CreateExpenseSchema>;

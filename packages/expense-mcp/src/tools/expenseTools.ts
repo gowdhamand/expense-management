@@ -18,12 +18,12 @@ export const expenseTools = [
     },
   },
   {
-    name: "list_expense_by_username",
+    name: "list_expenses_by_username",
     description: "List all expenses by username",
     inputSchema: {
       type: "object",
       properties: {
-        id: {
+        username: {
           type: "string",
           description: "username of the user to retrive expense",
         },
@@ -31,7 +31,7 @@ export const expenseTools = [
     },
   },
   {
-    name: "list_expense_by_dates",
+    name: "list_expenses_by_date",
     description: "List all expenses by dates",
     inputSchema: {
       type: "object",
@@ -61,14 +61,14 @@ export const expenseTools = [
     },
   },
   {
-    name: "list_Expense_by_Payment_Name",
+    name: "list_expenses_by_payment_name",
     description: "List all expenses by payment name",
     inputSchema: {
       type: "object",
       properties: {
-        paymentName: {
+        paymentMethod: {
           type: "string",
-          description: "payment name of the expense",
+          description: "payment method of the expense",
         },
       },
     },
@@ -91,15 +91,28 @@ export const expenseTools = [
           type: "string",
           description: "category of the expense",
         },
-        date: {
+        paymentMethod: {
           type: "string",
-          description: "date of the expense",
+          description:
+            "payment method of the expense (e.g., cash, credit card)",
+        },
+        expenseDate: {
+          type: "string",
+          description: "date of the expense (ISO format: YYYY-MM-DD)",
         },
         userName: {
           type: "string",
           description: "username of the user to create expense",
         },
       },
+      required: [
+        "amount",
+        "description",
+        "category",
+        "paymentMethod",
+        "expenseDate",
+        "userName",
+      ],
     },
   },
 ];
@@ -123,6 +136,8 @@ export async function handleToolCall(
         return await listExpensesByDates(args);
       case "list_expenses_by_payment_name":
         return await listExpensesByPaymentMethod(args);
+      case "create_expense":
+        return await createExpense(args);
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }
@@ -169,23 +184,52 @@ async function listExpensesByUsername(args: any): Promise<any> {
  * Create expense
  */
 async function createExpense(args: any): Promise<any> {
-  const validatedDate = CreateExpenseSchema.parse(args);
-  const expense = await client.createExpense(validatedDate);
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Expense Created: ${JSON.stringify(expense, null, 2)}`,
-      },
-    ],
-  };
+  try {
+    console.error(
+      "[DEBUG] createExpense called with args:",
+      JSON.stringify(args),
+    );
+
+    const validatedData = CreateExpenseSchema.parse(args);
+    console.error("[DEBUG] Validation passed:", JSON.stringify(validatedData));
+
+    const expense = await client.createExpense(validatedData);
+    console.error(
+      "[DEBUG] Expense created successfully:",
+      JSON.stringify(expense),
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Expense Created Successfully!\n\n${JSON.stringify(expense, null, 2)}`,
+        },
+      ],
+    };
+  } catch (error) {
+    console.error("[ERROR] Failed to create expense:", error);
+    if (error instanceof Error) {
+      console.error("[ERROR] Error message:", error.message);
+      console.error("[ERROR] Error stack:", error.stack);
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Failed to create expense: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+      isError: true,
+    };
+  }
 }
 
 /**
  * Get Expense By Category
  */
-async function listExpensesByCategory(category: string): Promise<any> {
-  const expenses = await client.getExpenseByCategory(category);
+async function listExpensesByCategory(args: any): Promise<any> {
+  const expenses = await client.getExpenseByCategory(args.category);
   return {
     content: [
       {
@@ -199,10 +243,8 @@ async function listExpensesByCategory(category: string): Promise<any> {
 /**
  * Get Expenese by Payment Method
  */
-async function listExpensesByPaymentMethod(
-  paymentMethod: string,
-): Promise<any> {
-  const expenses = await client.getExpenseByPaymentMethod(paymentMethod);
+async function listExpensesByPaymentMethod(args: any): Promise<any> {
+  const expenses = await client.getExpenseByPaymentMethod(args.paymentMethod);
   return {
     content: [
       {

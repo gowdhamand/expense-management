@@ -20,8 +20,8 @@ export class ExpenseApiClient {
    */
   async getAllExpenses(): Promise<Expense[]> {
     try {
-      const response = await this.client.get("api/expenses");
-      return response.data;
+      const response = await this.client.get("/api/expenses");
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
       throw this.handleError(error);
@@ -33,10 +33,10 @@ export class ExpenseApiClient {
    */
   async getExpenseByUserName(userName: string): Promise<Expense[]> {
     try {
-      const response = await this.client.get("api/expenses", {
+      const response = await this.client.get("/api/expenses", {
         params: { userName: userName },
       });
-      return response.data;
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
       throw this.handleError(error);
@@ -48,10 +48,10 @@ export class ExpenseApiClient {
    */
   async getExpenseByCategory(category: string): Promise<Expense[]> {
     try {
-      const response = await this.client.get("api/expenses", {
+      const response = await this.client.get("/api/expenses", {
         params: { category: category },
       });
-      return response.data;
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
       throw this.handleError(error);
@@ -63,10 +63,10 @@ export class ExpenseApiClient {
    */
   async getExpenseByPaymentMethod(paymentMethod: string): Promise<Expense[]> {
     try {
-      const response = await this.client.get("api/expenses", {
+      const response = await this.client.get("/api/expenses", {
         params: { paymentMethod: paymentMethod },
       });
-      return response.data;
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
       throw this.handleError(error);
@@ -78,13 +78,13 @@ export class ExpenseApiClient {
    */
   async getExpenseByDates(startDate: Date, endDate: Date): Promise<Expense[]> {
     try {
-      const response = await this.client.get("api/expenses", {
+      const response = await this.client.get("/api/expenses", {
         params: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
         },
       });
-      return response.data;
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
       throw this.handleError(error);
@@ -96,8 +96,8 @@ export class ExpenseApiClient {
    */
   async createExpense(expense: CreateExpenseInput): Promise<Expense> {
     try {
-      const response = await this.client.post("api/expenses", expense);
-      return response.data;
+      const response = await this.client.post("/api/expenses", expense);
+      return response.data.data || response.data;
     } catch (error) {
       console.error("Error creating expense:", error);
       throw this.handleError(error);

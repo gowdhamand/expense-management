@@ -11,9 +11,6 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { expenseTools, handleToolCall } from "./tools/expenseTools.js";
 import { ExpenseApiClient } from "./client/expenseClient.js";
-import { argv } from "node:process";
-import { mime } from "zod/v4";
-import { tr } from "zod/v4/locales";
 
 const client = new ExpenseApiClient();
 
@@ -63,6 +60,18 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
         description: "Expense details for user",
         mimeType: "application/json",
       },
+      {
+        uri: "expense://categories",
+        name: "Expense Categories",
+        description: "Expense categories for user",
+        mimeType: "application/json",
+      },
+      {
+        uri: "expense://Create",
+        name: "Create Expense",
+        description: "Create a new expense",
+        mimeType: "application/json",
+      },
     ],
   };
 });
@@ -71,15 +80,15 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
  * Handler for reading resources
  */
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  const uri = request.params.toString();
+  const uri = request.params.uri;
   if (uri === "expense://expenses") {
     const expenses = await client.getAllExpenses();
     return {
-      conttents: [
+      contents: [
         {
           uri: uri,
           mimeType: "application/json",
-          content: JSON.stringify(expenses, null, 2),
+          text: JSON.stringify(expenses, null, 2),
         },
       ],
     };
@@ -93,7 +102,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Burger MCP Server running on Stdio");
+  console.error("Expense MCP Server running on Stdio");
 }
 
 main().catch((error) => {
