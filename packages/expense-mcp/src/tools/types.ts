@@ -19,7 +19,7 @@ export const CreateExpenseSchema = z.object({
   userName: z.string().min(1).max(255),
   category: z.string().min(1).max(255),
   paymentMethod: z.string().min(1).max(255),
-  amount: z.number().min(0),
+  amount: z.coerce.number().min(0),
   description: z.string().min(1).max(255),
   expenseDate: z.string().min(1),
 });
